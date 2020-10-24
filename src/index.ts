@@ -16,7 +16,12 @@ import { IQueryData } from './queryDataInterface';
         alcohol: 'No',
     };
 
-    const formSubmitter = new FormSubmitter(query);
+    const formSubmitter = new FormSubmitter(
+        query,
+        'ctl00_ContentPlaceHolder1_btnCalculate',
+        'ctl00_ContentPlaceHolder1_updResult',
+        'ctl00_ContentPlaceHolder1_lbrs1',
+    );
 
     try {
         const targetValue = await formSubmitter.evaluateQuery();

@@ -7,17 +7,29 @@ require('dotenv').config();
 
 export default class FormSubmitter {
     private queryData: IQueryData;
+    private buttonHandlerId: string;
+    private watchFieldId: string;
+    private targetFieldId: string;
     private browser!: Browser;
 
-    constructor(queryData: IQueryData) {
+    constructor(queryData: IQueryData, buttonHandlerId: string, watchFieldId: string, targetFieldId: string) {
         this.queryData = queryData;
+        this.buttonHandlerId = buttonHandlerId;
+        this.watchFieldId = watchFieldId;
+        this.targetFieldId = targetFieldId;
     }
 
-    public async evaluateQuery(): Promise<number> {
+    public async evaluateQuery(): Promise<string> {
         const page = await this.browserNewPage();
 
-        const targetValue = await page.evaluate(
-            (serializedQueryData, formInput: Record<string, Input>) => {
+        await page.evaluate(
+            (
+                serializedQueryData: string,
+                buttonHandlerId: string,
+                watchFieldId: string,
+                targetFieldId: string,
+                formInput: Record<string, Input>,
+            ) => {
                 const queryData = JSON.parse(serializedQueryData);
 
                 (Object.keys(queryData) as Array<keyof IQueryData>).forEach((key) => {
@@ -46,11 +58,22 @@ export default class FormSubmitter {
                     }
                 });
 
-                return 1;
+                const buttonElement = document.querySelector(`#${buttonHandlerId}`) as HTMLInputElement;
+
+                buttonElement.click();
             },
             JSON.stringify(this.queryData),
+            this.buttonHandlerId,
+            this.watchFieldId,
+            this.targetFieldId,
             inputFields,
         );
+
+        await page.waitForSelector(`#${this.targetFieldId}`);
+
+        const targetValue = await page.evaluate((targetFieldId) => {
+            return document.querySelector(`#${targetFieldId}`)?.innerHTML!;
+        }, this.targetFieldId);
 
         this.browser.close();
 
