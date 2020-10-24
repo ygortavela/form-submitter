@@ -10,6 +10,7 @@ export default class FormSubmitter {
     private buttonHandlerId: string;
     private targetFieldId: string;
     private browser!: Browser;
+    private page!: Page;
 
     constructor(queryData: IQueryData, buttonHandlerId: string, targetFieldId: string) {
         this.queryData = queryData;
@@ -17,16 +18,34 @@ export default class FormSubmitter {
         this.targetFieldId = targetFieldId;
     }
 
-    public async evaluateQuery(): Promise<string> {
-        const page = await this.browserNewPage();
+    public async evaluateQuery() {
+        await this.browserNewPage();
 
-        await page.evaluate(
-            (
-                serializedQueryData: string,
-                buttonHandlerId: string,
-                targetFieldId: string,
-                formInput: Record<string, Input>,
-            ) => {
+        await this.setQueryDataOnPage();
+
+        await this.submitFormOnPage();
+
+        const targetValue = await this.getTargetValue();
+
+        this.browser.close();
+
+        return targetValue;
+    }
+
+    private async browserNewPage() {
+        this.browser = await puppeteer.launch({
+            headless: 'false' === process.env.DEBUG,
+            executablePath: process.env.CHROMIUM_PATH,
+        });
+
+        this.page = await this.browser.newPage();
+
+        await this.page.goto(process.env.PAGE_URL!);
+    }
+
+    private async setQueryDataOnPage() {
+        await this.page.evaluate(
+            (serializedQueryData: string, formInput: Record<string, Input>) => {
                 const queryData = JSON.parse(serializedQueryData);
 
                 (Object.keys(queryData) as Array<keyof IQueryData>).forEach((key) => {
@@ -54,38 +73,27 @@ export default class FormSubmitter {
                             break;
                     }
                 });
-
-                const buttonElement = document.querySelector(`#${buttonHandlerId}`) as HTMLInputElement;
-
-                buttonElement.click();
             },
             JSON.stringify(this.queryData),
-            this.buttonHandlerId,
-            this.targetFieldId,
             inputFields,
         );
-
-        await page.waitForSelector(`#${this.targetFieldId}`);
-
-        const targetValue = await page.evaluate((targetFieldId) => {
-            return document.querySelector(`#${targetFieldId}`)?.innerHTML!;
-        }, this.targetFieldId);
-
-        this.browser.close();
-
-        return targetValue;
     }
 
-    private async browserNewPage(): Promise<Page> {
-        this.browser = await puppeteer.launch({
-            headless: 'false' === process.env.DEBUG,
-            executablePath: process.env.CHROMIUM_PATH,
-        });
+    private async submitFormOnPage() {
+        await this.page.evaluate((buttonHandlerId: string) => {
+            const buttonElement = document.querySelector(`#${buttonHandlerId}`) as HTMLInputElement;
 
-        const page = await this.browser.newPage();
+            buttonElement.click();
+        }, this.buttonHandlerId);
+    }
 
-        await page.goto(process.env.PAGE_URL!);
+    private async getTargetValue() {
+        await this.page.waitForSelector(`#${this.targetFieldId}`);
 
-        return page;
+        const targetValue = await this.page.evaluate((targetFieldId: string) => {
+            return document.querySelector(`#${targetFieldId}`)?.innerHTML;
+        }, this.targetFieldId);
+
+        return targetValue;
     }
 }
