@@ -27,7 +27,7 @@ export default class FormSubmitter {
 
         const targetValue = await this.getTargetValue();
 
-        this.browser.close();
+        await this.browser.close();
 
         return targetValue;
     }
