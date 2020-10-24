@@ -8,14 +8,12 @@ require('dotenv').config();
 export default class FormSubmitter {
     private queryData: IQueryData;
     private buttonHandlerId: string;
-    private watchFieldId: string;
     private targetFieldId: string;
     private browser!: Browser;
 
-    constructor(queryData: IQueryData, buttonHandlerId: string, watchFieldId: string, targetFieldId: string) {
+    constructor(queryData: IQueryData, buttonHandlerId: string, targetFieldId: string) {
         this.queryData = queryData;
         this.buttonHandlerId = buttonHandlerId;
-        this.watchFieldId = watchFieldId;
         this.targetFieldId = targetFieldId;
     }
 
@@ -26,7 +24,6 @@ export default class FormSubmitter {
             (
                 serializedQueryData: string,
                 buttonHandlerId: string,
-                watchFieldId: string,
                 targetFieldId: string,
                 formInput: Record<string, Input>,
             ) => {
@@ -64,7 +61,6 @@ export default class FormSubmitter {
             },
             JSON.stringify(this.queryData),
             this.buttonHandlerId,
-            this.watchFieldId,
             this.targetFieldId,
             inputFields,
         );

@@ -19,7 +19,6 @@ import { IQueryData } from './queryDataInterface';
     const formSubmitter = new FormSubmitter(
         query,
         'ctl00_ContentPlaceHolder1_btnCalculate',
-        'ctl00_ContentPlaceHolder1_updResult',
         'ctl00_ContentPlaceHolder1_lbrs1',
     );
 
